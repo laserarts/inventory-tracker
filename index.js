@@ -31,7 +31,35 @@ db.serialize(() => {
       supplier TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
-  `);
+  `, async (err) => {
+    if (!err) {
+      // Add dummy data if table is empty
+      const count = await dbGet('SELECT COUNT(*) as count FROM products');
+      if (count.count === 0) {
+        const dummyData = [
+          { name: 'Laptop', description: 'High-performance laptop', category: 'Electronics', quantity: 15, reorder_level: 5, price: 999.99, supplier: 'Tech Corp' },
+          { name: 'Wireless Mouse', description: 'Ergonomic wireless mouse', category: 'Electronics', quantity: 42, reorder_level: 20, price: 29.99, supplier: 'Tech Corp' },
+          { name: 'USB-C Cable', description: '2m USB-C charging cable', category: 'Electronics', quantity: 8, reorder_level: 15, price: 12.99, supplier: 'Cable World' },
+          { name: 'Office Chair', description: 'Comfortable ergonomic chair', category: 'Home & Garden', quantity: 5, reorder_level: 3, price: 249.99, supplier: 'Furniture Co' },
+          { name: 'Desk Lamp', description: 'LED desk lamp with USB charging', category: 'Electronics', quantity: 22, reorder_level: 10, price: 39.99, supplier: 'Lighting Plus' },
+          { name: 'Notebook A4', description: 'Lined notebook 100 pages', category: 'Books', quantity: 60, reorder_level: 30, price: 4.99, supplier: 'Paper Supply' },
+          { name: 'Coffee Maker', description: 'Automatic coffee maker', category: 'Home & Garden', quantity: 3, reorder_level: 5, price: 89.99, supplier: 'Appliances Inc' },
+          { name: 'T-Shirt', description: 'Cotton t-shirt, assorted sizes', category: 'Clothing', quantity: 45, reorder_level: 20, price: 14.99, supplier: 'Fashion Co' },
+          { name: 'Jeans', description: 'Blue denim jeans', category: 'Clothing', quantity: 28, reorder_level: 15, price: 49.99, supplier: 'Fashion Co' },
+          { name: 'Apple', description: 'Fresh red apples', category: 'Food', quantity: 120, reorder_level: 50, price: 1.99, supplier: 'Fresh Farms' },
+          { name: 'Organic Coffee Beans', description: 'Premium organic coffee beans 1kg', category: 'Food', quantity: 18, reorder_level: 10, price: 19.99, supplier: 'Coffee Roasters' },
+          { name: 'Desk Organizer', description: 'Multi-compartment desk organizer', category: 'Home & Garden', quantity: 12, reorder_level: 8, price: 24.99, supplier: 'Office Supplies' }
+        ];
+        
+        dummyData.forEach(async (product) => {
+          await dbRun(
+            'INSERT INTO products (name, description, category, quantity, reorder_level, price, supplier) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [product.name, product.description, product.category, product.quantity, product.reorder_level, product.price, product.supplier]
+          );
+        });
+      }
+    }
+  });
 });
 
 // Helper function to promisify database calls
