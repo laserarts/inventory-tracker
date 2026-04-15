@@ -7,13 +7,14 @@ let allProducts = [];
 let categories = ['Electronics', 'Clothing', 'Food', 'Books', 'Home & Garden'];
 let darkMode = localStorage.getItem('darkMode') === 'true';
 
-// Initialize dark mode on load
-document.addEventListener('DOMContentLoaded', function() {
+// Initialize dark mode on load and ensure products load before initializing views/charts
+document.addEventListener('DOMContentLoaded', async function() {
   if (darkMode) {
     document.body.classList.add('dark-mode');
   }
-  loadProducts();
-  // Set dashboard as default view
+  // Wait for products to load before switching views or initializing charts
+  await loadProducts();
+  // Set dashboard as default view after data is available
   switchView('dashboard');
   // Check for low stock and show notifications
   setTimeout(checkLowStockNotifications, 1000);
