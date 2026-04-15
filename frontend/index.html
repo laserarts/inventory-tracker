@@ -3,59 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Tracker</title>
+    <title>Inventory Tracker Pro</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>📦 Inventory Management System</h1>
-        <div class="controls">
-            <button onclick="loadProducts()">🔄 Refresh</button>
-            <button onclick="openAddModal()">➕ Add Product</button>
-            <button onclick="openCategoryModal()">🏷️ Manage Categories</button>
-        </div>
+    <div class="app-wrapper">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>📦 Inventory Pro</h2>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-item active" onclick="switchView('dashboard')">
+                    <span>📊</span> Dashboard
+                </button>
+                <button class="nav-item" onclick="switchView('products')">
+                    <span>📋</span> Products
+                </button>
+                <button class="nav-item" onclick="switchView('analytics')">
+                    <span>📈</span> Analytics
+                </button>
+                <button class="nav-item" onclick="switchView('reports')">
+                    <span>📄</span> Reports
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn-secondary" onclick="openCategoryModal()">🏷️ Categories</button>
+                <button class="btn-danger" onclick="exportCSV()">📥 Export CSV</button>
+            </div>
+        </aside>
 
-        <!-- Search & Filter Controls -->
-        <div class="search-filter-section">
-            <input type="text" id="searchInput" placeholder="🔍 Search products..." onkeyup="filterProducts()">
-            
-            <div class="filter-controls">
-                <select id="categoryFilter" onchange="filterProducts()">
-                    <option value="">All Categories</option>
-                </select>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <section id="dashboardView" class="view active">
+                <div class="view-header">
+                    <h1>📊 Dashboard</h1>
+                    <button class="btn-primary" onclick="openAddModal()">➕ Add Product</button>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total Products</div>
+                            <div class="stat-value" id="totalProducts">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Low Stock</div>
+                            <div class="stat-value alert" id="lowStockCount">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total Value</div>
+                            <div class="stat-value">$<span id="totalValue">0.00</span></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Categories</div>
+                            <div class="stat-value" id="totalCategories">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Stock Distribution</h3>
+                        <canvas id="stockChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Category Breakdown</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Low Stock Items -->
+                <div class="recent-section">
+                    <h3>⚠️ Low Stock Items</h3>
+                    <div id="recentLowStock" class="recent-list"></div>
+                </div>
+            </section>
+
+            <!-- Products View -->
+            <section id="productsView" class="view">
+                <div class="view-header">
+                    <h1>📋 Product Inventory</h1>
+                    <div class="view-controls">
+                        <button class="btn-primary" onclick="openAddModal()">➕ Add Product</button>
+                        <button class="btn-secondary" onclick="toggleViewMode()">🔀 Toggle View</button>
+                    </div>
+                </div>
+
+                <!-- Search & Filter -->
+                <div class="search-filter-section">
+                    <input type="text" id="searchInput" placeholder="🔍 Search products..." onkeyup="filterProducts()">
+                    
+                    <div class="filter-controls">
+                        <select id="categoryFilter" onchange="filterProducts()">
+                            <option value="">All Categories</option>
+                        </select>
+                        
+                        <select id="sortBy" onchange="filterProducts()">
+                            <option value="newest">Newest First</option>
+                            <option value="name">Sort by Name</option>
+                            <option value="price">Sort by Price</option>
+                            <option value="quantity">Sort by Quantity</option>
+                            <option value="lowstock">Low Stock First</option>
+                        </select>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="showLowStock" onchange="filterProducts()">
+                            Low Stock Only
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Products Grid/Table -->
+                <div id="products-list" class="products-grid"></div>
+            </section>
+
+            <!-- Analytics View -->
+            <section id="analyticsView" class="view">
+                <div class="view-header">
+                    <h1>📈 Analytics</h1>
+                </div>
                 
-                <select id="sortBy" onchange="filterProducts()">
-                    <option value="newest">Newest First</option>
-                    <option value="name">Sort by Name</option>
-                    <option value="price">Sort by Price</option>
-                    <option value="quantity">Sort by Quantity</option>
-                    <option value="lowstock">Low Stock First</option>
-                </select>
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>Value by Category</h3>
+                        <canvas id="valueChart"></canvas>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Stock Status</h3>
+                        <canvas id="stockStatusChart"></canvas>
+                    </div>
+                </div>
 
-                <label class="checkbox-label">
-                    <input type="checkbox" id="showLowStock" onchange="filterProducts()">
-                    Low Stock Only
-                </label>
-            </div>
-        </div>
+                <div class="analytics-table">
+                    <h3>Product Statistics</h3>
+                    <table id="analyticsTable">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Total Value</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analyticsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
 
-        <!-- Stats Section -->
-        <div class="stats-section">
-            <div class="stat-card">
-                <span class="stat-label">Total Products</span>
-                <span class="stat-value" id="totalProducts">0</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Low Stock Items</span>
-                <span class="stat-value alert" id="lowStockCount">0</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Total Value</span>
-                <span class="stat-value">$<span id="totalValue">0.00</span></span>
-            </div>
-        </div>
+            <!-- Reports View -->
+            <section id="reportsView" class="view">
+                <div class="view-header">
+                    <h1>📄 Reports</h1>
+                    <button class="btn-primary" onclick="downloadReport()">⬇️ Download Report</button>
+                </div>
+                
+                <div class="reports-section">
+                    <div class="report-card">
+                        <h3>📦 Inventory Summary</h3>
+                        <div id="inventorySummary"></div>
+                    </div>
+                    
+                    <div class="report-card">
+                        <h3>⚠️ Stock Alerts</h3>
+                        <div id="stockAlerts"></div>
+                    </div>
 
-        <div id="products-list"></div>
+                    <div class="report-card">
+                        <h3>💰 Top Products by Value</h3>
+                        <div id="topProducts"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
     <!-- Add Product Modal -->
@@ -64,9 +200,15 @@
             <span class="close" onclick="closeAddModal()">&times;</span>
             <h2>Add New Product</h2>
             <form id="addProductForm" onsubmit="submitAddProduct(event)">
-                <div class="form-group">
-                    <label for="productName">Product Name *</label>
-                    <input type="text" id="productName" name="name" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productName">Product Name *</label>
+                        <input type="text" id="productName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productSKU">SKU/Code</label>
+                        <input type="text" id="productSKU" name="sku">
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -117,9 +259,15 @@
             <form id="editProductForm" onsubmit="submitEditProduct(event)">
                 <input type="hidden" id="editProductId">
                 
-                <div class="form-group">
-                    <label for="editProductName">Product Name *</label>
-                    <input type="text" id="editProductName" name="name" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editProductName">Product Name *</label>
+                        <input type="text" id="editProductName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductSKU">SKU/Code</label>
+                        <input type="text" id="editProductSKU" name="sku">
+                    </div>
                 </div>
 
                 <div class="form-group">

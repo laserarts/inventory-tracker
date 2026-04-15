@@ -331,8 +331,309 @@ window.onclick = function(event) {
   }
 }
 
+// View Switching
+function switchView(viewName) {
+  // Hide all views
+  document.querySelectorAll('.view').forEach(view => {
+    view.classList.remove('active');
+  });
+
+  // Update nav items
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.remove('active');
+  });
+
+  // Show selected view
+  const viewId = viewName + 'View';
+  const viewElement = document.getElementById(viewId);
+  if (viewElement) {
+    viewElement.classList.add('active');
+
+    // Update active nav item
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      if (item.textContent.toLowerCase().includes(viewName)) {
+        item.classList.add('active');
+      }
+    });
+
+    // Load data based on view
+    if (viewName === 'analytics') {
+      populateAnalytics();
+      initCharts();
+    } else if (viewName === 'reports') {
+      populateReports();
+    } else if (viewName === 'dashboard') {
+      initCharts();
+    }
+  }
+}
+
+// Initialize Charts
+function initCharts() {
+  // Only initialize if Chart.js is available
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js not loaded');
+    return;
+  }
+
+  // Stock Distribution Chart
+  const stockCtx = document.getElementById('stockChart');
+  if (stockCtx && !window.stockChartInstance) {
+    const data = allProducts.slice(0, 5).map(p => ({ name: p.name, qty: p.quantity }));
+    window.stockChartInstance = new Chart(stockCtx, {
+      type: 'bar',
+      data: {
+        labels: data.map(d => d.name),
+        datasets: [{
+          label: 'Stock Quantity',
+          data: data.map(d => d.qty),
+          backgroundColor: '#667eea',
+          borderColor: '#764ba2',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true }
+        }
+      }
+    });
+  }
+
+  // Category Chart
+  const categoryCtx = document.getElementById('categoryChart');
+  if (categoryCtx && !window.categoryChartInstance) {
+    const categoryData = {};
+    allProducts.forEach(p => {
+      const cat = p.category || 'Uncategorized';
+      categoryData[cat] = (categoryData[cat] || 0) + 1;
+    });
+
+    window.categoryChartInstance = new Chart(categoryCtx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(categoryData),
+        datasets: [{
+          data: Object.values(categoryData),
+          backgroundColor: ['#667eea', '#764ba2', '#e74c3c', '#27ae60', '#f39c12']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right' }
+        }
+      }
+    });
+  }
+
+  // Value by Category Chart
+  const valueCtx = document.getElementById('valueChart');
+  if (valueCtx && !window.valueChartInstance) {
+    const valueData = {};
+    allProducts.forEach(p => {
+      const cat = p.category || 'Uncategorized';
+      valueData[cat] = (valueData[cat] || 0) + ((p.quantity || 0) * (p.price || 0));
+    });
+
+    window.valueChartInstance = new Chart(valueCtx, {
+      type: 'pie',
+      data: {
+        labels: Object.keys(valueData),
+        datasets: [{
+          data: Object.values(valueData),
+          backgroundColor: ['#667eea', '#764ba2', '#e74c3c', '#27ae60', '#f39c12']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right' }
+        }
+      }
+    });
+  }
+
+  // Stock Status Chart
+  const statusCtx = document.getElementById('stockStatusChart');
+  if (statusCtx && !window.statusChartInstance) {
+    const inStock = allProducts.filter(p => p.quantity >= p.reorder_level).length;
+    const lowStock = allProducts.filter(p => p.quantity < p.reorder_level).length;
+
+    window.statusChartInstance = new Chart(statusCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['In Stock', 'Low Stock'],
+        datasets: [{
+          data: [inStock, lowStock],
+          backgroundColor: ['#27ae60', '#e74c3c']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true }
+        }
+      }
+    });
+  }
+}
+
+// Populate Analytics Table
+function populateAnalytics() {
+  const tableBody = document.getElementById('analyticsTableBody');
+  if (!tableBody) return;
+
+  const rows = allProducts.map(product => {
+    const totalValue = (product.quantity || 0) * (product.price || 0);
+    const status = product.quantity < product.reorder_level ? '⚠️ Low' : '✅ Good';
+
+    return `
+      <tr>
+        <td>${product.name}</td>
+        <td>${product.category || 'Uncategorized'}</td>
+        <td>${product.quantity}</td>
+        <td>$${product.price?.toFixed(2) || '0.00'}</td>
+        <td>$${totalValue.toFixed(2)}</td>
+        <td>${status}</td>
+      </tr>
+    `;
+  }).join('');
+
+  tableBody.innerHTML = rows || '<tr><td colspan="6" style="text-align: center;">No products to display</td></tr>';
+
+  // Update stats
+  const categoryCount = [...new Set(allProducts.map(p => p.category))].length;
+  if (document.getElementById('totalCategories')) {
+    document.getElementById('totalCategories').textContent = categoryCount;
+  }
+}
+
+// Populate Reports
+function populateReports() {
+  // Inventory Summary
+  const inventorySummary = document.getElementById('inventorySummary');
+  if (inventorySummary) {
+    const totalProducts = allProducts.length;
+    const totalValue = allProducts.reduce((sum, p) => sum + ((p.quantity || 0) * (p.price || 0)), 0);
+
+    inventorySummary.innerHTML = `
+      <strong>Total Products:</strong> ${totalProducts}<br>
+      <strong>Total Inventory Value:</strong> $${totalValue.toFixed(2)}<br>
+      <strong>Average Product Value:</strong> $${(totalValue / totalProducts || 0).toFixed(2)}
+    `;
+  }
+
+  // Stock Alerts
+  const stockAlerts = document.getElementById('stockAlerts');
+  if (stockAlerts) {
+    const lowStockProducts = allProducts.filter(p => p.quantity < p.reorder_level);
+    
+    if (lowStockProducts.length === 0) {
+      stockAlerts.innerHTML = '<p style="color: #27ae60;">✅ All products are well stocked</p>';
+    } else {
+      stockAlerts.innerHTML = `
+        <p style="color: #e74c3c;">⚠️ ${lowStockProducts.length} products need restocking:</p>
+        <ul style="margin: 10px 0 0 20px;">
+          ${lowStockProducts.map(p => `<li>${p.name} (${p.quantity}/${p.reorder_level})</li>`).join('')}
+        </ul>
+      `;
+    }
+  }
+
+  // Top Products
+  const topProducts = document.getElementById('topProducts');
+  if (topProducts) {
+    const sorted = [...allProducts].sort((a, b) => 
+      ((b.quantity || 0) * (b.price || 0)) - ((a.quantity || 0) * (a.price || 0))
+    ).slice(0, 5);
+
+    topProducts.innerHTML = `
+      <ol>
+        ${sorted.map(p => `
+          <li>${p.name} - $${((p.quantity || 0) * (p.price || 0)).toFixed(2)}</li>
+        `).join('')}
+      </ol>
+    `;
+  }
+}
+
+// Export CSV
+function exportCSV() {
+  if (allProducts.length === 0) {
+    alert('No products to export');
+    return;
+  }
+
+  const headers = ['Product', 'Category', 'Quantity', 'Reorder Level', 'Price', 'Total Value', 'Supplier', 'Description'];
+  const rows = allProducts.map(p => [
+    p.name,
+    p.category || 'N/A',
+    p.quantity,
+    p.reorder_level,
+    p.price?.toFixed(2) || '0',
+    ((p.quantity || 0) * (p.price || 0)).toFixed(2),
+    p.supplier || 'N/A',
+    p.description || 'N/A'
+  ]);
+
+  let csv = headers.join(',') + '\n';
+  rows.forEach(row => {
+    csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `inventory-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+// Download Report
+function downloadReport() {
+  const totalProducts = allProducts.length;
+  const totalValue = allProducts.reduce((sum, p) => sum + ((p.quantity || 0) * (p.price || 0)), 0);
+  const lowStockProducts = allProducts.filter(p => p.quantity < p.reorder_level);
+
+  let report = `INVENTORY REPORT\n`;
+  report += `Generated: ${new Date().toLocaleString()}\n\n`;
+  report += `SUMMARY\n`;
+  report += `Total Products: ${totalProducts}\n`;
+  report += `Total Value: $${totalValue.toFixed(2)}\n`;
+  report += `Low Stock Items: ${lowStockProducts.length}\n\n`;
+  report += `LOW STOCK ALERT\n`;
+  report += lowStockProducts.map(p => `${p.name}: ${p.quantity}/${p.reorder_level}`).join('\n') || 'None\n';
+
+  const blob = new Blob([report], { type: 'text/plain' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `inventory-report-${new Date().toISOString().slice(0, 10)}.txt`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+// Toggle View Mode
+function toggleViewMode() {
+  const container = document.getElementById('products-list');
+  if (container.classList.contains('table-view')) {
+    container.classList.remove('table-view');
+  } else {
+    container.classList.add('table-view');
+  }
+}
+
 // Load products on page load
-document.addEventListener('DOMContentLoaded', loadProducts);
-
-
-
+document.addEventListener('DOMContentLoaded', function() {
+  loadProducts();
+  // Set dashboard as default view
+  switchView('dashboard');
+});
