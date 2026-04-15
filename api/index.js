@@ -3,6 +3,7 @@ import cors from 'cors';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { tmpdir } from 'os';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -10,10 +11,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Initialize database with proper path for Vercel
-const dbPath = process.env.DB_PATH || path.join(__dirname, '../inventory.db');
+// Initialize database - use /tmp for Vercel (serverless)
+const dbPath = process.env.DB_PATH || path.join(tmpdir(), 'inventory.db');
 const db = new sqlite3.Database(dbPath);
 
 // Create tables if they don't exist
@@ -62,6 +62,11 @@ function dbGet(sql, params = []) {
 }
 
 // API Routes
+
+// Health check
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', message: 'Inventory Tracker API' });
+});
 
 // GET all products
 app.get('/api/products', async (req, res) => {
@@ -141,9 +146,5 @@ app.delete('/api/products/:id', async (req, res) => {
   }
 });
 
-// Fallback to index.html for frontend routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
-
 export default app;
+

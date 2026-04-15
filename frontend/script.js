@@ -1,4 +1,8 @@
-const API_URL = '/api';
+// Use relative URLs so it works on both localhost and Vercel
+const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+  ? '/api' 
+  : '/api';
+
 let allProducts = [];
 let categories = ['Electronics', 'Clothing', 'Food', 'Books', 'Home & Garden'];
 
