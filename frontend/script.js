@@ -690,18 +690,6 @@ function resetReportDates() {
 }
 
 // Toggle View Mode
-function toggleViewMode() {
-  const container = document.getElementById('products-list');
-  if (container.classList.contains('table-view')) {
-    container.classList.remove('table-view');
-    showNotification('📊 Switched to grid view', 'info');
-  } else {
-    container.classList.add('table-view');
-    showNotification('📋 Switched to table view', 'info');
-  }
-  filterProducts();
-}
-
 // Export CSV
 function exportCSV() {
   if (allProducts.length === 0) {

@@ -361,36 +361,6 @@ body.dark-mode .report-card h3 {
   }
 }
 
-/* Grid/Table View Toggle */
-.products-grid.table-view {
-  display: block;
-}
-
-.products-grid.table-view .product-card {
-  display: grid;
-  grid-template-columns: 1fr 150px 150px 150px 150px 100px;
-  gap: 15px;
-  align-items: center;
-  padding: 15px;
-  margin-bottom: 10px;
-}
-
-.products-grid.table-view .product-card h3 {
-  grid-column: 1;
-}
-
-.products-grid.table-view .category-badge {
-  grid-column: 1;
-}
-
-.products-grid.table-view .product-card p {
-  display: none;
-}
-
-.products-grid.table-view .actions {
-  grid-column: 1 / -1;
-}
-
 /* Filter Labels */
 .filter-label {
   display: flex;
