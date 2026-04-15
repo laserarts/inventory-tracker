@@ -219,5 +219,5 @@ Feel free to fork this repository and submit pull requests for any improvements.
 
 ---
 
-**Live Demo:** [View on Vercel](https://your-vercel-url.com)  
+**Live Demo:** [View on Vercel](https://inventory-tracker-erps-ystems.vercel.app)  
 **Repository:** [GitHub](https://github.com/laserarts/inventory-tracker)
