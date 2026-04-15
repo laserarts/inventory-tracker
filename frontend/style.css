@@ -21,6 +21,181 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: #f5f7fa;
   color: var(--dark);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.dark-mode {
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
+
+body.dark-mode .stat-card,
+body.dark-mode .chart-container,
+body.dark-mode .analytics-table,
+body.dark-mode .report-card,
+body.dark-mode .product-card,
+body.dark-mode .modal-content,
+body.dark-mode .sidebar,
+body.dark-mode .recent-section {
+  background: #2a2a2a;
+  color: #e0e0e0;
+}
+
+body.dark-mode input[type="text"],
+body.dark-mode input[type="number"],
+body.dark-mode input[type="date"],
+body.dark-mode select,
+body.dark-mode textarea {
+  background: #333;
+  color: #e0e0e0;
+  border-color: #444;
+}
+
+body.dark-mode .modal-content {
+  background: #2a2a2a;
+  color: #e0e0e0;
+}
+
+body.dark-mode .analytics-table th {
+  background: #333;
+  color: #e0e0e0;
+  border-bottom-color: #444;
+}
+
+body.dark-mode .analytics-table td {
+  border-bottom-color: #444;
+}
+
+body.dark-mode .product-card h3 {
+  color: #e0e0e0;
+}
+
+body.dark-mode .sidebar {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+/* Notifications */
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 400px;
+}
+
+.notification {
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  animation: slideInRight 0.3s ease;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: 100%;
+}
+
+.notification.info {
+  background: #3498db;
+  color: white;
+}
+
+.notification.warning {
+  background: #f39c12;
+  color: white;
+}
+
+.notification.error {
+  background: #e74c3c;
+  color: white;
+}
+
+.notification.success {
+  background: #27ae60;
+  color: white;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+/* Grid/Table View Toggle */
+.products-grid.table-view {
+  display: block;
+}
+
+.products-grid.table-view .product-card {
+  display: grid;
+  grid-template-columns: 1fr 150px 150px 150px 150px 100px;
+  gap: 15px;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+}
+
+.products-grid.table-view .product-card h3 {
+  grid-column: 1;
+}
+
+.products-grid.table-view .category-badge {
+  grid-column: 1;
+}
+
+.products-grid.table-view .product-card p {
+  display: none;
+}
+
+.products-grid.table-view .actions {
+  grid-column: 1 / -1;
+}
+
+/* Filter Labels */
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--light);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.filter-label input[type="date"] {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+body.dark-mode .filter-label {
+  background: #333;
+  color: #e0e0e0;
+}
+
+body.dark-mode .filter-label input[type="date"] {
+  background: #444;
+  color: #e0e0e0;
+  border-color: #555;
 }
 
 /* App Layout */

@@ -30,8 +30,13 @@
             </nav>
             <div class="sidebar-footer">
                 <button class="btn-secondary" onclick="openCategoryModal()">🏷️ Categories</button>
+                <button class="btn-secondary" onclick="toggleDarkMode()">🌙 Dark Mode</button>
                 <button class="btn-danger" onclick="exportCSV()">📥 Export CSV</button>
             </div>
+        </aside>
+
+        <!-- Notification Area -->
+        <div id="notificationContainer" class="notification-container"></div>
         </aside>
 
         <!-- Main Content -->
@@ -137,6 +142,24 @@
                 <div class="view-header">
                     <h1>📈 Analytics</h1>
                 </div>
+
+                <!-- Analytics Search & Filter -->
+                <div class="search-filter-section">
+                    <input type="text" id="analyticsSearchInput" placeholder="🔍 Search products..." onkeyup="filterAnalytics()">
+                    
+                    <div class="filter-controls">
+                        <select id="analyticsCategoryFilter" onchange="filterAnalytics()">
+                            <option value="">All Categories</option>
+                        </select>
+                        
+                        <select id="analyticsSortBy" onchange="filterAnalytics()">
+                            <option value="name">Sort by Name</option>
+                            <option value="value">Sort by Value</option>
+                            <option value="quantity">Sort by Quantity</option>
+                            <option value="price">Sort by Price</option>
+                        </select>
+                    </div>
+                </div>
                 
                 <div class="analytics-grid">
                     <div class="analytics-card">
@@ -171,7 +194,21 @@
             <section id="reportsView" class="view">
                 <div class="view-header">
                     <h1>📄 Reports</h1>
-                    <button class="btn-primary" onclick="downloadReport()">⬇️ Download Report</button>
+                    <div class="view-controls">
+                        <button class="btn-primary" onclick="downloadReportPDF()">📕 Download PDF</button>
+                        <button class="btn-secondary" onclick="downloadReport()">📄 Download Text</button>
+                    </div>
+                </div>
+
+                <!-- Reports Date Filter -->
+                <div class="search-filter-section">
+                    <label class="filter-label">
+                        From: <input type="date" id="reportDateFrom" onchange="populateReports()">
+                    </label>
+                    <label class="filter-label">
+                        To: <input type="date" id="reportDateTo" onchange="populateReports()">
+                    </label>
+                    <button class="btn-secondary" onclick="resetReportDates()">Reset Dates</button>
                 </div>
                 
                 <div class="reports-section">

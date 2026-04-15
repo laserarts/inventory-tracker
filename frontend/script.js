@@ -5,8 +5,19 @@ const API_URL = typeof window !== 'undefined' && window.location.hostname === 'l
 
 let allProducts = [];
 let categories = ['Electronics', 'Clothing', 'Food', 'Books', 'Home & Garden'];
+let darkMode = localStorage.getItem('darkMode') === 'true';
 
-// Load all products
+// Initialize dark mode on load
+document.addEventListener('DOMContentLoaded', function() {
+  if (darkMode) {
+    document.body.classList.add('dark-mode');
+  }
+  loadProducts();
+  // Set dashboard as default view
+  switchView('dashboard');
+  // Check for low stock and show notifications
+  setTimeout(checkLowStockNotifications, 1000);
+});
 async function loadProducts() {
   try {
     const response = await fetch(`${API_URL}/products`);
@@ -14,9 +25,10 @@ async function loadProducts() {
     loadCategories();
     filterProducts();
     updateStats();
+    populateAnalytics();
   } catch (error) {
     console.error('Error loading products:', error);
-    alert('Failed to load products');
+    showNotification('❌ Failed to load products', 'error');
   }
 }
 
@@ -212,16 +224,16 @@ async function addProduct(data) {
     });
 
     if (response.ok) {
-      alert('✅ Product added successfully');
+      showNotification('✅ Product added successfully', 'success');
       closeAddModal();
       loadProducts();
     } else {
       const error = await response.json();
-      alert('❌ Failed to add product: ' + error.error);
+      showNotification(`❌ Failed to add product: ${error.error}`, 'error');
     }
   } catch (error) {
     console.error('Error adding product:', error);
-    alert('❌ Error adding product');
+    showNotification('❌ Error adding product', 'error');
   }
 }
 
@@ -279,16 +291,16 @@ async function updateProduct(id, data) {
     });
 
     if (response.ok) {
-      alert('✅ Product updated successfully');
+      showNotification('✅ Product updated successfully', 'success');
       closeEditModal();
       loadProducts();
     } else {
       const error = await response.json();
-      alert('❌ Failed to update product: ' + error.error);
+      showNotification(`❌ Failed to update product: ${error.error}`, 'error');
     }
   } catch (error) {
     console.error('Error updating product:', error);
-    alert('❌ Error updating product');
+    showNotification('❌ Error updating product', 'error');
   }
 }
 
@@ -302,15 +314,15 @@ async function deleteProduct(id) {
     });
 
     if (response.ok) {
-      alert('✅ Product deleted successfully');
+      showNotification('✅ Product deleted successfully', 'success');
       loadProducts();
     } else {
       const error = await response.json();
-      alert('❌ Failed to delete product: ' + error.error);
+      showNotification(`❌ Failed to delete product: ${error.error}`, 'error');
     }
   } catch (error) {
     console.error('Error deleting product:', error);
-    alert('❌ Error deleting product');
+    showNotification('❌ Error deleting product', 'error');
   }
 }
 
@@ -328,6 +340,46 @@ window.onclick = function(event) {
   }
   if (event.target == categoryModal) {
     closeCategoryModal();
+  }
+}
+
+// Dark Mode Toggle
+function toggleDarkMode() {
+  darkMode = !darkMode;
+  localStorage.setItem('darkMode', darkMode);
+  
+  if (darkMode) {
+    document.body.classList.add('dark-mode');
+    showNotification('🌙 Dark mode enabled', 'success');
+  } else {
+    document.body.classList.remove('dark-mode');
+    showNotification('☀️ Light mode enabled', 'info');
+  }
+}
+
+// Notification System
+function showNotification(message, type = 'info', duration = 3000) {
+  const container = document.getElementById('notificationContainer');
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.innerHTML = `<span>${message}</span>`;
+  
+  container.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOutRight 0.3s ease';
+    setTimeout(() => notification.remove(), 300);
+  }, duration);
+}
+
+// Check Low Stock and Show Notifications
+function checkLowStockNotifications() {
+  const lowStockItems = allProducts.filter(p => p.quantity < p.reorder_level);
+  
+  if (lowStockItems.length > 0) {
+    const itemNames = lowStockItems.slice(0, 2).map(p => p.name).join(', ');
+    const moreText = lowStockItems.length > 2 ? ` and ${lowStockItems.length - 2} more` : '';
+    showNotification(`⚠️ Low stock alert: ${itemNames}${moreText}`, 'warning', 5000);
   }
 }
 
@@ -490,7 +542,38 @@ function populateAnalytics() {
   const tableBody = document.getElementById('analyticsTableBody');
   if (!tableBody) return;
 
-  const rows = allProducts.map(product => {
+  // Get filter values
+  const searchTerm = (document.getElementById('analyticsSearchInput')?.value || '').toLowerCase();
+  const categoryFilter = document.getElementById('analyticsCategoryFilter')?.value || '';
+  const sortBy = document.getElementById('analyticsSortBy')?.value || 'name';
+
+  // Filter products
+  let filtered = allProducts.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm) ||
+                         (product.description || '').toLowerCase().includes(searchTerm);
+    const matchesCategory = !categoryFilter || product.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Sort products
+  switch(sortBy) {
+    case 'value':
+      filtered.sort((a, b) => 
+        ((b.quantity || 0) * (b.price || 0)) - ((a.quantity || 0) * (a.price || 0))
+      );
+      break;
+    case 'quantity':
+      filtered.sort((a, b) => (b.quantity || 0) - (a.quantity || 0));
+      break;
+    case 'price':
+      filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
+      break;
+    case 'name':
+    default:
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  const rows = filtered.map(product => {
     const totalValue = (product.quantity || 0) * (product.price || 0);
     const status = product.quantity < product.reorder_level ? '⚠️ Low' : '✅ Good';
 
@@ -508,20 +591,54 @@ function populateAnalytics() {
 
   tableBody.innerHTML = rows || '<tr><td colspan="6" style="text-align: center;">No products to display</td></tr>';
 
+  // Update categoriesfilter dropdown if not already populated
+  const categorySelect = document.getElementById('analyticsCategoryFilter');
+  if (categorySelect && categorySelect.options.length === 1) {
+    const uniqueCategories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+    uniqueCategories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      categorySelect.appendChild(option);
+    });
+  }
+
   // Update stats
-  const categoryCount = [...new Set(allProducts.map(p => p.category))].length;
+  const categoryCount = [...new Set(filtered.map(p => p.category))].length;
   if (document.getElementById('totalCategories')) {
     document.getElementById('totalCategories').textContent = categoryCount;
   }
 }
 
+// Filter analytics
+function filterAnalytics() {
+  populateAnalytics();
+}
+
 // Populate Reports
 function populateReports() {
+  // Get date filters
+  const fromDate = document.getElementById('reportDateFrom')?.value || null;
+  const toDate = document.getElementById('reportDateTo')?.value || null;
+
+  // Filter products by date range (if created_at field exists)
+  let filteredProducts = allProducts;
+  
+  if (fromDate || toDate) {
+    filteredProducts = allProducts.filter(product => {
+      if (!product.created_at) return true;
+      const productDate = new Date(product.created_at);
+      if (fromDate && productDate < new Date(fromDate)) return false;
+      if (toDate && productDate > new Date(toDate)) return false;
+      return true;
+    });
+  }
+
   // Inventory Summary
   const inventorySummary = document.getElementById('inventorySummary');
   if (inventorySummary) {
-    const totalProducts = allProducts.length;
-    const totalValue = allProducts.reduce((sum, p) => sum + ((p.quantity || 0) * (p.price || 0)), 0);
+    const totalProducts = filteredProducts.length;
+    const totalValue = filteredProducts.reduce((sum, p) => sum + ((p.quantity || 0) * (p.price || 0)), 0);
 
     inventorySummary.innerHTML = `
       <strong>Total Products:</strong> ${totalProducts}<br>
@@ -533,7 +650,7 @@ function populateReports() {
   // Stock Alerts
   const stockAlerts = document.getElementById('stockAlerts');
   if (stockAlerts) {
-    const lowStockProducts = allProducts.filter(p => p.quantity < p.reorder_level);
+    const lowStockProducts = filteredProducts.filter(p => p.quantity < p.reorder_level);
     
     if (lowStockProducts.length === 0) {
       stockAlerts.innerHTML = '<p style="color: #27ae60;">✅ All products are well stocked</p>';
@@ -550,7 +667,7 @@ function populateReports() {
   // Top Products
   const topProducts = document.getElementById('topProducts');
   if (topProducts) {
-    const sorted = [...allProducts].sort((a, b) => 
+    const sorted = [...filteredProducts].sort((a, b) => 
       ((b.quantity || 0) * (b.price || 0)) - ((a.quantity || 0) * (a.price || 0))
     ).slice(0, 5);
 
@@ -564,10 +681,31 @@ function populateReports() {
   }
 }
 
+// Reset report dates
+function resetReportDates() {
+  document.getElementById('reportDateFrom').value = '';
+  document.getElementById('reportDateTo').value = '';
+  populateReports();
+  showNotification('📅 Date filters reset', 'info');
+}
+
+// Toggle View Mode
+function toggleViewMode() {
+  const container = document.getElementById('products-list');
+  if (container.classList.contains('table-view')) {
+    container.classList.remove('table-view');
+    showNotification('📊 Switched to grid view', 'info');
+  } else {
+    container.classList.add('table-view');
+    showNotification('📋 Switched to table view', 'info');
+  }
+  filterProducts();
+}
+
 // Export CSV
 function exportCSV() {
   if (allProducts.length === 0) {
-    alert('No products to export');
+    showNotification('⚠️ No products to export', 'warning');
     return;
   }
 
@@ -595,16 +733,20 @@ function exportCSV() {
   a.download = `inventory-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   window.URL.revokeObjectURL(url);
+  showNotification('✅ CSV exported successfully', 'success');
 }
 
-// Download Report
+// Download Report (Text)
 function downloadReport() {
+  const fromDate = document.getElementById('reportDateFrom')?.value || 'All dates';
+  const toDate = document.getElementById('reportDateTo')?.value || 'All dates';
   const totalProducts = allProducts.length;
   const totalValue = allProducts.reduce((sum, p) => sum + ((p.quantity || 0) * (p.price || 0)), 0);
   const lowStockProducts = allProducts.filter(p => p.quantity < p.reorder_level);
 
   let report = `INVENTORY REPORT\n`;
-  report += `Generated: ${new Date().toLocaleString()}\n\n`;
+  report += `Generated: ${new Date().toLocaleString()}\n`;
+  report += `Date Range: ${fromDate} to ${toDate}\n\n`;
   report += `SUMMARY\n`;
   report += `Total Products: ${totalProducts}\n`;
   report += `Total Value: $${totalValue.toFixed(2)}\n`;
@@ -619,21 +761,81 @@ function downloadReport() {
   a.download = `inventory-report-${new Date().toISOString().slice(0, 10)}.txt`;
   a.click();
   window.URL.revokeObjectURL(url);
+  showNotification('✅ Text report downloaded', 'success');
 }
 
-// Toggle View Mode
-function toggleViewMode() {
-  const container = document.getElementById('products-list');
-  if (container.classList.contains('table-view')) {
-    container.classList.remove('table-view');
+// Download Report (PDF) - Using HTML2PDF or similar approach
+function downloadReportPDF() {
+  // Check if html2pdf library is available
+  if (typeof html2pdf === 'undefined') {
+    // Load html2pdf library
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    document.head.appendChild(script);
+    
+    script.onload = generatePDF;
   } else {
-    container.classList.add('table-view');
+    generatePDF();
   }
 }
 
-// Load products on page load
-document.addEventListener('DOMContentLoaded', function() {
-  loadProducts();
-  // Set dashboard as default view
-  switchView('dashboard');
-});
+function generatePDF() {
+  const fromDate = document.getElementById('reportDateFrom')?.value || 'All';
+  const toDate = document.getElementById('reportDateTo')?.value || 'All';
+  const totalValue = allProducts.reduce((sum, p) => sum + ((p.quantity || 0) * (p.price || 0)), 0);
+  const lowStockProducts = allProducts.filter(p => p.quantity < p.reorder_level);
+
+  const element = document.createElement('div');
+  element.innerHTML = `
+    <h1>Inventory Report</h1>
+    <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+    <p><strong>Date Range:</strong> ${fromDate} to ${toDate}</p>
+    
+    <h2>Summary</h2>
+    <p>Total Products: ${allProducts.length}</p>
+    <p>Total Inventory Value: $${totalValue.toFixed(2)}</p>
+    <p>Low Stock Items: ${lowStockProducts.length}</p>
+    
+    <h2>Low Stock Alerts</h2>
+    <ul>
+      ${lowStockProducts.map(p => `<li>${p.name}: ${p.quantity}/${p.reorder_level}</li>`).join('')}
+    </ul>
+    
+    <h2>All Products</h2>
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f0f0f0;">
+          <th style="border: 1px solid #ddd; padding: 8px;">Product</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Category</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Qty</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Price</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${allProducts.map(p => `
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">${p.name}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${p.category || 'N/A'}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${p.quantity}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">$${p.price?.toFixed(2) || '0'}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">$${((p.quantity || 0) * (p.price || 0)).toFixed(2)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  const opt = {
+    margin: 10,
+    filename: `inventory-report-${new Date().toISOString().slice(0, 10)}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+  };
+
+  html2pdf().set(opt).from(element).save();
+  showNotification('✅ PDF report downloaded', 'success');
+}
+
+
