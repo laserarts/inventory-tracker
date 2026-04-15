@@ -429,10 +429,19 @@ function initCharts() {
     return;
   }
 
+  // Destroy existing charts to allow recreation
+  if (window.stockChartInstance) window.stockChartInstance.destroy();
+  if (window.categoryChartInstance) window.categoryChartInstance.destroy();
+  if (window.valueChartInstance) window.valueChartInstance.destroy();
+  if (window.statusChartInstance) window.statusChartInstance.destroy();
+
+  // Only render charts if we have data
+  if (allProducts.length === 0) return;
+
   // Stock Distribution Chart
   const stockCtx = document.getElementById('stockChart');
-  if (stockCtx && !window.stockChartInstance) {
-    const data = allProducts.slice(0, 5).map(p => ({ name: p.name, qty: p.quantity }));
+  if (stockCtx) {
+    const data = allProducts.slice(0, 8).map(p => ({ name: p.name.substring(0, 12), qty: p.quantity }));
     window.stockChartInstance = new Chart(stockCtx, {
       type: 'bar',
       data: {
@@ -457,7 +466,7 @@ function initCharts() {
 
   // Category Chart
   const categoryCtx = document.getElementById('categoryChart');
-  if (categoryCtx && !window.categoryChartInstance) {
+  if (categoryCtx) {
     const categoryData = {};
     allProducts.forEach(p => {
       const cat = p.category || 'Uncategorized';
@@ -485,7 +494,7 @@ function initCharts() {
 
   // Value by Category Chart
   const valueCtx = document.getElementById('valueChart');
-  if (valueCtx && !window.valueChartInstance) {
+  if (valueCtx) {
     const valueData = {};
     allProducts.forEach(p => {
       const cat = p.category || 'Uncategorized';
@@ -513,7 +522,7 @@ function initCharts() {
 
   // Stock Status Chart
   const statusCtx = document.getElementById('stockStatusChart');
-  if (statusCtx && !window.statusChartInstance) {
+  if (statusCtx) {
     const inStock = allProducts.filter(p => p.quantity >= p.reorder_level).length;
     const lowStock = allProducts.filter(p => p.quantity < p.reorder_level).length;
 
