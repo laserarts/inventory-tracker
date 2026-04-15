@@ -12,7 +12,49 @@
         <div class="controls">
             <button onclick="loadProducts()">🔄 Refresh</button>
             <button onclick="openAddModal()">➕ Add Product</button>
+            <button onclick="openCategoryModal()">🏷️ Manage Categories</button>
         </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="search-filter-section">
+            <input type="text" id="searchInput" placeholder="🔍 Search products..." onkeyup="filterProducts()">
+            
+            <div class="filter-controls">
+                <select id="categoryFilter" onchange="filterProducts()">
+                    <option value="">All Categories</option>
+                </select>
+                
+                <select id="sortBy" onchange="filterProducts()">
+                    <option value="newest">Newest First</option>
+                    <option value="name">Sort by Name</option>
+                    <option value="price">Sort by Price</option>
+                    <option value="quantity">Sort by Quantity</option>
+                    <option value="lowstock">Low Stock First</option>
+                </select>
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="showLowStock" onchange="filterProducts()">
+                    Low Stock Only
+                </label>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="stats-section">
+            <div class="stat-card">
+                <span class="stat-label">Total Products</span>
+                <span class="stat-value" id="totalProducts">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Low Stock Items</span>
+                <span class="stat-value alert" id="lowStockCount">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Total Value</span>
+                <span class="stat-value">$<span id="totalValue">0.00</span></span>
+            </div>
+        </div>
+
         <div id="products-list"></div>
     </div>
 
@@ -34,8 +76,8 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="productCategory">Category</label>
-                        <input type="text" id="productCategory" name="category">
+                        <label for="productCategory">Category *</label>
+                        <select id="productCategory" name="category" required></select>
                     </div>
                     <div class="form-group">
                         <label for="productPrice">Price ($)</label>
@@ -87,8 +129,8 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="editProductCategory">Category</label>
-                        <input type="text" id="editProductCategory" name="category">
+                        <label for="editProductCategory">Category *</label>
+                        <select id="editProductCategory" name="category" required></select>
                     </div>
                     <div class="form-group">
                         <label for="editProductPrice">Price ($)</label>
@@ -117,6 +159,24 @@
                     <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Category Management Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCategoryModal()">&times;</span>
+            <h2>Manage Categories</h2>
+            
+            <div class="form-group">
+                <label for="newCategoryInput">Add New Category</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="newCategoryInput" placeholder="Enter category name">
+                    <button type="button" class="btn-primary" onclick="addCategory()">Add</button>
+                </div>
+            </div>
+
+            <div id="categoriesList" style="margin-top: 20px;"></div>
         </div>
     </div>
 

@@ -1,15 +1,60 @@
 const API_URL = '/api';
+let allProducts = [];
+let categories = ['Electronics', 'Clothing', 'Food', 'Books', 'Home & Garden'];
 
 // Load all products
 async function loadProducts() {
   try {
     const response = await fetch(`${API_URL}/products`);
-    const products = await response.json();
-    displayProducts(products);
+    allProducts = await response.json();
+    loadCategories();
+    filterProducts();
+    updateStats();
   } catch (error) {
     console.error('Error loading products:', error);
     alert('Failed to load products');
   }
+}
+
+// Filter and display products
+function filterProducts() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const categoryFilter = document.getElementById('categoryFilter').value;
+  const sortBy = document.getElementById('sortBy').value;
+  const showLowStockOnly = document.getElementById('showLowStock').checked;
+
+  let filtered = allProducts.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm) ||
+                         (product.description || '').toLowerCase().includes(searchTerm) ||
+                         (product.supplier || '').toLowerCase().includes(searchTerm);
+    
+    const matchesCategory = !categoryFilter || product.category === categoryFilter;
+    const isLowStock = product.quantity < product.reorder_level;
+    const matchesLowStock = !showLowStockOnly || isLowStock;
+
+    return matchesSearch && matchesCategory && matchesLowStock;
+  });
+
+  // Sort products
+  switch(sortBy) {
+    case 'name':
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case 'price':
+      filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
+      break;
+    case 'quantity':
+      filtered.sort((a, b) => (a.quantity || 0) - (b.quantity || 0));
+      break;
+    case 'lowstock':
+      filtered.sort((a, b) => (a.quantity - a.reorder_level) - (b.quantity - b.reorder_level));
+      break;
+    case 'newest':
+    default:
+      filtered.sort((a, b) => b.id - a.id);
+  }
+
+  displayProducts(filtered);
 }
 
 // Display products in the UI
@@ -17,31 +62,120 @@ function displayProducts(products) {
   const container = document.getElementById('products-list');
   
   if (products.length === 0) {
-    container.innerHTML = '<p style="grid-column: 1/-1;">No products found</p>';
+    container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">No products found</p>';
     return;
   }
 
-  container.innerHTML = products.map(product => `
-    <div class="product-card">
-      <h3>${product.name}</h3>
-      <p><strong>Category:</strong> ${product.category || 'N/A'}</p>
-      <p><strong>Description:</strong> ${product.description || 'N/A'}</p>
-      <p><strong>Quantity:</strong> ${product.quantity}</p>
-      <p><strong>Reorder Level:</strong> ${product.reorder_level}</p>
-      <p><strong>Price:</strong> $${product.price?.toFixed(2) || '0.00'}</p>
-      <p><strong>Supplier:</strong> ${product.supplier || 'N/A'}</p>
-      <div class="actions">
-        <button style="flex: 1;" onclick="openEditModal(${product.id})">✏️ Edit</button>
-        <button class="delete" style="flex: 1;" onclick="deleteProduct(${product.id})">🗑️ Delete</button>
+  container.innerHTML = products.map(product => {
+    const isLowStock = product.quantity < product.reorder_level;
+    return `
+      <div class="product-card ${isLowStock ? 'low-stock' : ''}">
+        <h3>${product.name}</h3>
+        <span class="category-badge">${product.category || 'Uncategorized'}</span>
+        <p><strong>Description:</strong> ${product.description || 'N/A'}</p>
+        <p><strong>Quantity:</strong> <span style="color: ${isLowStock ? '#e74c3c' : '#333'}">${product.quantity}</span> (Reorder: ${product.reorder_level})</p>
+        <p><strong>Price:</strong> $${product.price?.toFixed(2) || '0.00'}</p>
+        <p><strong>Supplier:</strong> ${product.supplier || 'N/A'}</p>
+        <div class="actions">
+          <button style="flex: 1;" onclick="openEditModal(${product.id})">✏️ Edit</button>
+          <button class="delete" style="flex: 1;" onclick="deleteProduct(${product.id})">🗑️ Delete</button>
+        </div>
       </div>
+    `;
+  }).join('');
+}
+
+// Update statistics
+function updateStats() {
+  const totalProducts = allProducts.length;
+  const lowStockCount = allProducts.filter(p => p.quantity < p.reorder_level).length;
+  const totalValue = allProducts.reduce((sum, p) => sum + ((p.quantity || 0) * (p.price || 0)), 0);
+
+  document.getElementById('totalProducts').textContent = totalProducts;
+  document.getElementById('lowStockCount').textContent = lowStockCount;
+  document.getElementById('totalValue').textContent = totalValue.toFixed(2);
+}
+
+// Load categories and populate dropdowns
+function loadCategories() {
+  const addCategorySelect = document.getElementById('productCategory');
+  const editCategorySelect = document.getElementById('editProductCategory');
+  const categoryFilter = document.getElementById('categoryFilter');
+
+  // Get unique categories from products
+  const productCategories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  const allCategories = [...new Set([...categories, ...productCategories])];
+
+  [addCategorySelect, editCategorySelect].forEach(select => {
+    select.innerHTML = '<option value="">Select a category</option>';
+    allCategories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      select.appendChild(option);
+    });
+  });
+}
+
+// Category Modal Functions
+function openCategoryModal() {
+  displayCategories();
+  document.getElementById('categoryModal').classList.add('active');
+  document.getElementById('newCategoryInput').value = '';
+}
+
+function closeCategoryModal() {
+  document.getElementById('categoryModal').classList.remove('active');
+}
+
+function displayCategories() {
+  const allCategories = [...new Set([...categories, ...allProducts.map(p => p.category).filter(Boolean)])];
+  const container = document.getElementById('categoriesList');
+
+  container.innerHTML = '<div class="categories-list">' + allCategories.map(cat => `
+    <div class="category-item">
+      <span>${cat}</span>
+      <button onclick="deleteCategory('${cat}')">❌</button>
     </div>
-  `).join('');
+  `).join('') + '</div>';
+}
+
+function addCategory() {
+  const input = document.getElementById('newCategoryInput').value.trim();
+  if (!input) {
+    alert('Please enter a category name');
+    return;
+  }
+
+  if (categories.includes(input)) {
+    alert('Category already exists');
+    return;
+  }
+
+  categories.push(input);
+  displayCategories();
+  loadCategories();
+  document.getElementById('newCategoryInput').value = '';
+}
+
+function deleteCategory(category) {
+  const productsInCategory = allProducts.filter(p => p.category === category).length;
+  
+  if (productsInCategory > 0) {
+    alert(`Cannot delete category with ${productsInCategory} product(s). Please reassign them first.`);
+    return;
+  }
+
+  categories = categories.filter(c => c !== category);
+  displayCategories();
+  loadCategories();
 }
 
 // Modal Functions - Add Product
 function openAddModal() {
   document.getElementById('addModal').classList.add('active');
   document.getElementById('addProductForm').reset();
+  loadCategories();
 }
 
 function closeAddModal() {
@@ -102,6 +236,7 @@ async function openEditModal(id) {
     document.getElementById('editProductPrice').value = product.price || 0;
     document.getElementById('editProductSupplier').value = product.supplier || '';
 
+    loadCategories();
     document.getElementById('editModal').classList.add('active');
   } catch (error) {
     console.error('Error loading product:', error);
@@ -179,6 +314,7 @@ async function deleteProduct(id) {
 window.onclick = function(event) {
   const addModal = document.getElementById('addModal');
   const editModal = document.getElementById('editModal');
+  const categoryModal = document.getElementById('categoryModal');
   
   if (event.target == addModal) {
     closeAddModal();
@@ -186,9 +322,13 @@ window.onclick = function(event) {
   if (event.target == editModal) {
     closeEditModal();
   }
+  if (event.target == categoryModal) {
+    closeCategoryModal();
+  }
 }
 
 // Load products on page load
 document.addEventListener('DOMContentLoaded', loadProducts);
+
 
 
