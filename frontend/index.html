@@ -1,15 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory Tracker</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Inventory Management System</h1>
-        <button onclick="loadProducts()">Refresh Products</button>
+        <h1>📦 Inventory Management System</h1>
+        <div class="controls">
+            <button onclick="loadProducts()">🔄 Refresh</button>
+            <button onclick="openAddModal()">➕ Add Product</button>
+        </div>
         <div id="products-list"></div>
     </div>
-    <script src="script.js"></script>
+
+    <!-- Add Product Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddModal()">&times;</span>
+            <h2>Add New Product</h2>
+            <form id="addProductForm" onsubmit="submitAddProduct(event)">
+                <div class="form-group">
+                    <label for="productName">Product Name *</label>
+                    <input type="text" id="productName" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="productDescription">Description</label>
+                    <textarea id="productDescription" name="description" rows="3"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productCategory">Category</label>
+                        <input type="text" id="productCategory" name="category">
+                    </div>
+                    <div class="form-group">
+                        <label for="productPrice">Price ($)</label>
+                        <input type="number" id="productPrice" name="price" min="0" step="0.01" value="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productQuantity">Quantity</label>
+                        <input type="number" id="productQuantity" name="quantity" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="productReorder">Reorder Level</label>
+                        <input type="number" id="productReorder" name="reorder_level" min="0" value="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="productSupplier">Supplier</label>
+                    <input type="text" id="productSupplier" name="supplier">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Add Product</button>
+                    <button type="button" class="btn-secondary" onclick="closeAddModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Product</h2>
+            <form id="editProductForm" onsubmit="submitEditProduct(event)">
+                <input type="hidden" id="editProductId">
+                
+                <div class="form-group">
+                    <label for="editProductName">Product Name *</label>
+                    <input type="text" id="editProductName" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editProductDescription">Description</label>
+                    <textarea id="editProductDescription" name="description" rows="3"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editProductCategory">Category</label>
+                        <input type="text" id="editProductCategory" name="category">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductPrice">Price ($)</label>
+                        <input type="number" id="editProductPrice" name="price" min="0" step="0.01" value="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editProductQuantity">Quantity</label>
+                        <input type="number" id="editProductQuantity" name="quantity" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductReorder">Reorder Level</label>
+                        <input type="number" id="editProductReorder" name="reorder_level" min="0" value="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editProductSupplier">Supplier</label>
+                    <input type="text" id="editProductSupplier" name="supplier">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Update Product</button>
+                    <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js" defer></script>
 </body>
 </html>
